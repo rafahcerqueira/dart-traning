@@ -1,38 +1,63 @@
 import 'dart:io';
 
-const MAX = 4;
+//Rafael Cerqueira Gomes BT3032591
 
 class Aluno {
   String ra;
   String nome;
-  int idade;
-  List<double> notas;
+  int anoEntrada;
+  double ira;
+  Curso curso;
 
-  Aluno(this.ra, this.nome, this.idade, this.notas);
+  Aluno(this.ra, this.nome, this.anoEntrada, this.ira, this.curso);
 
   Map<String, dynamic> toJson() {
     return {
       'ra': ra,
       'nome': nome,
-      'idade': idade,
-      'notas': notas,
+      'anoEntrada': anoEntrada,
+      'ira': ira,
+      'curso': curso.toJson(),
     };
   }
 }
 
 class Curso {
-  List<Aluno> alunos;
+  String nome;
+  String campus;
 
-  Curso() : alunos = [];
+  Curso({
+    required this.nome,
+    required this.campus,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'nome': nome,
+      'campus': campus,
+    };
+  }
+}
+  
+  List<Aluno> alunos = []; 
 
   void inserirAluno(Aluno aluno) {
     alunos.add(aluno);
   }
 
+  bool alunoExiste(String ra) {
+    return alunos.any((aluno) => aluno.ra == ra);
+  }
+
   Aluno? buscarAluno(String ra) {
     return alunos.firstWhere(
       (aluno) => aluno.ra == ra,
-      orElse: () => null,
+    );
+  }
+
+  Aluno? buscarAlunoNome(String nome) {
+    return alunos.firstWhere(
+      (aluno) => aluno.nome == nome,
     );
   }
 
@@ -40,67 +65,67 @@ class Curso {
     alunos.forEach((aluno) {
       print('RA: ${aluno.ra}');
       print('Nome: ${aluno.nome}');
-      print('Idade: ${aluno.idade}');
-      for (int i = 0; i < MAX; i++) {
-        print('Nota ${i + 1}: ${aluno.notas[i]}');
-      }
+      print('Ano de Entrada: ${aluno.anoEntrada}');
+      print('IRA: ${aluno.ira}');
+      print('Curso: ${aluno.curso.nome}');
+      print('Campus: ${aluno.curso.campus}');
       print('');
     });
   }
 
-  void excluirAluno(int ra) {
+  void exibirAlunosIRA() {
+    alunos.forEach((aluno) {
+      if (aluno.ira >= 6) {
+        print('RA: ${aluno.ra}');
+        print('Nome: ${aluno.nome}');
+        print('Ano de Entrada: ${aluno.anoEntrada}');
+        print('IRA: ${aluno.ira}');
+        print('Curso: ${aluno.curso.nome}');
+        print('Campus: ${aluno.curso.campus}');
+        print('');
+      }
+    });
+  }
+
+  void excluirAluno(String ra) {
     alunos.removeWhere((aluno) => aluno.ra == ra);
   }
 
-  void exportarLista() {
-    List<Map<String, dynamic>> listaExportada = [];
-    alunos.forEach((aluno) {
-      listaExportada.add(aluno.toJson());
-    });
-    print(listaExportada);
+  List<Map<String, dynamic>> exportarLista() {
+    return alunos.map((aluno) => aluno.toJson()).toList();
   }
+
+bool validaRa(String ra) {
+  if (ra.length < 5 || ra.isEmpty || ra.contains(' ')) {
+    return false;
+  }
+  return true;
 }
 
-int menu() {
-  print('\n\n\t*** MENU ***\n');
-  print('1 - Inserir aluno;');
-  print('2 - Buscar aluno por RA;');
-  print('3 - Exibir lista de alunos;');
-  print('4 - Excluir aluno da lista (RA);');
-  print('5 - Exportar lista de alunos;');
-  print('0 - Sair.\n');
-  stdout.write('---> Informe sua escolha: ');
-  return int.parse(stdin.readLineSync()!);
+bool validaNome(String nome) {
+  if (nome.isEmpty || nome.length < 3 || nome.contains(RegExp(r'[0-9]')) || nome.contains(' ')) {
+    return false;
+  }
+  return true;
 }
 
-bool validaRa(String input) {
-  // Verifica se não há caracteres especiais no input, permitindo números inteiros
-  var specialCharRegExp = RegExp(r'^[bB][tT]\d+$');
-  return specialCharRegExp.hasMatch(input);
+bool validaAnoEntrada(String anoEntrada) {
+  if (anoEntrada.isEmpty || int.tryParse(anoEntrada) == null || int.parse(anoEntrada) < 0 || anoEntrada.length != 4) {
+    return false;
+  }
+  return true;
 }
 
-bool validaNome(String input) {
-  // Verifica se o nome contém apenas letras
-  final nomeRegExp = RegExp(r'^[a-zA-Z]+$');
-  return nomeRegExp.hasMatch(input);
-}
-
-bool validaIdade(String input) {
-  // Verifica se a idade é um número inteiro positivo
-  final idadeRegExp = RegExp(r'^\d+$');
-  return idadeRegExp.hasMatch(input);
-}
-
-bool validaNota(String input) {
-  // Verifica se a nota é um número inteiro positivo
-  final notaRegExp = RegExp(r'^\d+$');
-  return notaRegExp.hasMatch(input);
+bool validaIRA(double ira) {
+  if (ira.isNaN || ira < 0 || ira > 10) {
+    return false;
+  }
+  return true;
 }
 
 void main() {
   var option;
   var raAux;
-  var curso = Curso();
 
   do {
     option = menu();
@@ -115,6 +140,11 @@ void main() {
           break;
         }
 
+        if (alunoExiste(ra)) {
+          print('RA já cadastrado!\n');
+          break;
+        }
+
         stdout.write('- Informe o nome: ');
         var nome = stdin.readLineSync()!;
         if (!validaNome(nome)) {
@@ -122,71 +152,130 @@ void main() {
           break;
         }
 
-        stdout.write('- Informe a idade: ');
-        var idade = stdin.readLineSync()!;
-        if (!validaIdade(idade)) {
-          print('Idade inválida! Insira somente números inteiros.\n');
+        stdout.write('- Informe o ano de entrada: ');
+        var anoEntrada = stdin.readLineSync()!;
+        if (!validaAnoEntrada(anoEntrada)) {
+          print('Ano de Entrada inválido!\n');
+          break;
+        }
+        
+        stdout.write('- Informe o seu IRA: ');
+        var ira = double.parse(stdin.readLineSync()!);
+        if (!validaIRA(ira)) {
+          print('IRA inválido! Insira somente números.\n');
+          break;
+        }
+        
+        stdout.write('- Informe o nome do curso: ');
+        var nomeCurso = stdin.readLineSync()!;
+
+        stdout.write('- Informe o nome do campus: ');
+        var nomeCampus = stdin.readLineSync()!;
+
+        var curso = Curso(nome: nomeCurso, campus: nomeCampus);
+        var aluno = Aluno(ra, nome, int.parse(anoEntrada), ira, curso);
+        inserirAluno(aluno);
+        break;
+
+      case 2:
+        stdout.write('\nInforme o nome para buscar: ');
+        var nome = stdin.readLineSync()!;
+        if (!validaNome(nome)) {
+          print('Nome não encontrado!\n');
           break;
         }
 
-        var notas = <double>[];
-        for (var i = 0; i < MAX; i++) {
-          stdout.write('- Informe a nota ${i + 1}: ');
-          var nota = stdin.readLineSync()!;
-          if (!validaNota(nota)) {
-            print('Nota inválida! Insira somente números inteiros.\n');
-            break;
-          }
-          notas.add(double.parse(nota));
+        var alunoEncontrado = buscarAlunoNome(nome);
+        if (alunoEncontrado != null) {
+          print('\nAluno encontrado:');
+          print('RA: ${alunoEncontrado.ra}');
+          print('Nome: ${alunoEncontrado.nome}');
+          print('Ano de Entrada: ${alunoEncontrado.anoEntrada}');
+          print('IRA: ${alunoEncontrado.ira}');
+          print('Curso: ${alunoEncontrado.curso.nome}');
+          print('Campus: ${alunoEncontrado.curso.campus}');
+          
+        } else {
+          print('\nERRO! Aluno não encontrado.');
         }
-
-        var aluno = Aluno(ra, nome, int.parse(idade), notas);
-        curso.inserirAluno(aluno);
         break;
-      case 2:
+
+      case 3:
         stdout.write('\nInforme o valor do RA para buscar: ');
         raAux = stdin.readLineSync()!;
         if (!validaRa(raAux)) {
           print('RA inválido! Insira somente letras e números.\n');
           break;
         }
-        var alunoEncontrado = curso.buscarAluno(raAux);
+
+        var alunoEncontrado = buscarAluno(raAux);
         if (alunoEncontrado != null) {
           print('\nAluno encontrado:');
           print('RA: ${alunoEncontrado.ra}');
           print('Nome: ${alunoEncontrado.nome}');
-          print('Idade: ${alunoEncontrado.idade}');
-          for (var i = 0; i < MAX; i++) {
-            print('Nota ${i + 1}: ${alunoEncontrado.notas[i]}');
-          }
+          print('Ano de Entrada: ${alunoEncontrado.anoEntrada}');
+          print('IRA: ${alunoEncontrado.ira}');
+          
         } else {
-          print('\nERRO! Aluno não encontrado :(');
+          print('\nERRO! Aluno não encontrado.');
         }
         break;
-      case 3:
-        print('\nExibindo lista de alunos: \n');
-        curso.exibirAlunos();
-        break;
+
       case 4:
         stdout.write('\nInforme o valor do RA para excluir: ');
         raAux = stdin.readLineSync()!;
         if (!validaRa(raAux)) {
-          print('RA inválido! Insira somente letras e números.\n');
+          print('RA inválido ou não encontrado! Tente usar letras e números.\n');
           break;
         }
-        curso.excluirAluno(int.parse(raAux));
+
+        excluirAluno(raAux);
         print('\nAluno excluído!');
         break;
+
       case 5:
+        print('\nExibindo lista de alunos: \n');
+        exibirAlunos();
+        break;
+
+      case 6:
+        print('\nExibindo lista de alunos com IRA >= 6: \n');
+        exibirAlunosIRA();
+        break;
+
+      case 7:
+        print('\nApagar todos: \n');
+        alunos.clear();
+        break;
+
+      case 8:
         print('\nExportando lista de alunos: \n');
-        curso.exportarLista();
+        print(exportarLista());
         break;
+
       case 0:
-        print('\nFinalizando, até mais :)\n');
+        print('\nPrograma Finalizado \n');
         break;
+
       default:
         print('\nOpção inválida :(\n');
         break;
     }
   } while (option != 0);
+}
+
+int menu() {
+  print('\n\n\t*** MENU ***\n');
+  print('1 - Inserir aluno');
+  print('2 - Buscar aluno por Nome');
+  print('3 - Buscar aluno por RA');
+  print('4 - Excluir aluno por RA');
+  print('5 - Exibir lista de alunos');
+  print('6 - Exibir lista de alunos com IRA >= 6');
+  print('7 - Excluir todos os alunos');
+  print('8 - Exportar lista de alunos');
+  print('0 - Sair.\n');
+  stdout.write('Informe sua escolha: ');
+  
+  return int.parse(stdin.readLineSync()!);
 }
